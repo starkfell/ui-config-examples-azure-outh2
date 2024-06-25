@@ -1,0 +1,201 @@
+---
+# [kafka-ui] - Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui
+  namespace: kafka-ui
+  labels:
+    app: kafka-ui
+    service: kafka-ui
+spec:
+  type: ClusterIP
+  selector:
+    app: kafka-ui
+  ports:
+  - name: http-kafka-ui
+    port: 8080
+    targetPort: 8080
+---
+# [kafka-ui] - Virtual Service
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: kafka-ui-route
+  namespace: kafka-ui
+spec:
+  hosts:
+  - '*'
+  gateways:
+  - istio-system/dev-apps-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /kafka-ui/
+    rewrite:
+      uri: /kafka-ui/
+    route:
+    - destination:
+        host: kafka-ui.kafka-ui.svc.cluster.local
+        port:
+          number: 8080
+---
+# [kafka-ui] - Destination Rule
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: kafka-ui-destination-rule
+  namespace: kafka-ui
+spec:
+  host: kafka-ui.kafka-ui.svc.cluster.local
+---
+# [kafka-ui] - Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kafka-ui
+  namespace: kafka-ui
+---
+# [kafka-ui] - Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui-deployment
+  namespace: kafka-ui
+  labels:
+    app: kafka-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      serviceAccountName: kafka-ui
+      containers:
+      - name: kafka-ui
+        #image: "provectuslabs/kafka-ui:latest"
+        image: "kafbat/kafka-ui:v1.0.0"
+        env:
+        - name: SPRING_CONFIG_ADDITIONAL-LOCATION
+          value: "kui-config/config.yml"
+        - name: LOGGING_LEVEL_ROOT
+          value: "INFO"
+        - name: SERVER_SERVLET_CONTEXT_PATH
+          value: "/kafka-ui"
+        ports:
+        - containerPort: 8080
+        - name: liveness-port
+          containerPort: 8080
+        volumeMounts:
+        - name: kafka-ui-configmap
+          mountPath: /kui-config
+      volumes:
+        - name: kafka-ui-configmap
+          configMap:
+            name: kafka-ui-configmap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-ui-configmap
+  namespace: kafka-ui
+data:
+  config.yml: |-
+    logging:
+      level:
+        io.kafbat.ui.service.rbac.extractor: TRACE
+    kafka:
+      clusters:
+      - name: $eventHubsNamespaceName
+        bootstrapServers: $eventHubsNamespaceName.servicebus.windows.net:9093
+        properties:
+          sasl:
+            jaas:
+              config: org.apache.kafka.common.security.plain.PlainLoginModule required username='\$ConnectionString' password='$eventHubsNamespaceConnectionString';
+            mechanism: PLAIN
+            kerberos:
+              service:
+                name: kafka
+          security:
+            protocol: SASL_SSL
+    auth:
+      type: OAUTH2
+      oauth2:
+        client:
+          azure:
+            clientId: "$kafkaUiAppRegAppId"
+            clientSecret: "$spPassword"
+            scope:
+            - openid
+            - email
+            client-name: azure
+            provider: azure
+            redirect-uri: https://$aksFqdn/kafka-ui/login/oauth2/code/azure
+            authorization-grant-type: authorization_code
+            issuer-uri: https://login.microsoftonline.com/$azTenantId/v2.0
+            jwk-set-uri: https://login.microsoftonline.com/$azTenantId/discovery/v2.0/keys
+            user-name-attribute: email
+            custom-params:
+              type: oauth
+              roles-field: roles
+    rbac:
+      roles:
+        - name: "KafkaUI.Admins"
+          clusters:
+            - $eventHubsNamespaceName
+          subjects:
+            - provider: oauth
+              type: role
+              value: "KafkaUI.Admins"
+          permissions:
+            - resource: applicationconfig
+              actions: all
+            - resource: clusterconfig
+              actions: all
+            - resource: topic
+              value: ".*"
+              actions: all
+            - resource: consumer
+              value: ".*"
+              actions: all
+            - resource: schema
+              value: ".*"
+              actions: all
+            - resource: connect
+              value: ".*"
+              actions: all
+            - resource: ksql
+              actions: all
+            - resource: acl
+              actions: [ "view" ]
+        - name: "KafkaUI.ReadOnly"
+          clusters:
+            - $eventHubsNamespaceName
+          subjects:
+            - provider: oauth
+              type: role
+              value: "KafkaUI.ReadOnly"
+          permissions:
+            - resource: clusterconfig
+              actions: [ "view" ]
+            - resource: topic
+              value: ".*"
+              actions: 
+                - VIEW
+                - MESSAGES_READ
+            - resource: consumer
+              value: ".*"
+              actions: [ view ]
+            - resource: schema
+              value: ".*"
+              actions: [ view ]
+            - resource: connect
+              value: ".*"
+              actions: [ view ]
+            - resource: acl
+              actions: [ view ]
+---
