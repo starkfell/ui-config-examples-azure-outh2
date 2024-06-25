@@ -1,0 +1,5 @@
+{
+    "principalId": "$kafkaUiAppRoleReadOnlySecGroupId",
+    "resourceId": "$spId",
+    "appRoleId": "$kafkaUiAppRoleReadOnlyId"
+}
