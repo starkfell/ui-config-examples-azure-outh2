@@ -1,0 +1,7 @@
+{
+    "web": {
+        "redirectUris": [
+          "https://$aksFqdn/kafka-ui/login/oauth2/code/azure"
+        ]
+    }
+}
