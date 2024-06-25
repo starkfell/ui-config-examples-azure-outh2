@@ -1,0 +1,46 @@
+{
+    "optionalClaims": {
+        "idToken": [
+            {
+                "name": "groups",
+                "source": null,
+                "essential": false,
+                "additionalProperties": []
+            }
+        ],
+        "accessToken": [
+            {
+                "name": "verified_primary_email",
+                "source": null,
+                "essential": false,
+                "additionalProperties": []
+            },
+            {
+                "name": "email",
+                "source": null,
+                "essential": false,
+                "additionalProperties": []
+            },
+            {
+                "name": "upn",
+                "source": null,
+                "essential": false,
+                "additionalProperties": []
+            },
+            {
+                "name": "groups",
+                "source": null,
+                "essential": false,
+                "additionalProperties": []
+            }
+        ],
+        "saml2Token": [
+            {
+                "name": "groups",
+                "source": null,
+                "essential": false,
+                "additionalProperties": []
+            }
+        ]
+    }
+}
