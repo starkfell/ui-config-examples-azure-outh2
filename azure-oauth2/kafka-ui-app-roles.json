@@ -1,0 +1,26 @@
+{
+    "appRoles": [
+        {
+            "allowedMemberTypes": [
+                "User"
+            ],
+            "description": "Users have Admin access to the Kafka UI",
+            "displayName": "Kafka UI Admins",
+            "id": "$kafkaUiAdminsAppRoleGuid",
+            "isEnabled": "true",
+            "origin": "Application",
+            "value": "KafkaUI.Admins"
+        },
+        {
+            "allowedMemberTypes": [
+                "User"
+            ],
+            "description": "Users have Read-Only access to the Kafka UI",
+            "displayName": "Kafka UI Read-Only",
+            "id": "$kafkaUiReadOnlyAppRoleGuid",
+            "isEnabled": "true",
+            "origin": "Application",
+            "value": "KafkaUI.ReadOnly"
+        }
+    ]
+}
